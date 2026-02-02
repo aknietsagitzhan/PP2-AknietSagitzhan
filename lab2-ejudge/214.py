@@ -1,8 +1,11 @@
-n = int(input())
-a = list(map(int, input().split()))
+a=int(input())
+n=list(map(int, input().split()))
+
 v = {}
-for x in a:
-    v[x] = v.get(x, 0) + 1
-mx = max(v.values())
-output = min(x for x, c in v.items() if c == mx)
-print(output)
+for x in n:
+    v[x] = v.get(x,0) + 1
+mx = max(v, key=v.get)
+if v[mx] == 1:
+    print(min(n))
+else:
+    print(mx)

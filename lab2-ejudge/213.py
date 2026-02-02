@@ -6,5 +6,5 @@ else:
         if n % i == 0:
             print("No")
             break
-        else:
-            print("Yes")
+    else:
+        print("Yes")
