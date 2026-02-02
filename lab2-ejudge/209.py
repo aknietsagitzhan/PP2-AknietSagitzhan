@@ -1,4 +1,4 @@
-n = int(input())
+p = int(input())
 a = list(map(int, input().split()))
 mx = a[0]
 mn = a[0]
