@@ -47,7 +47,9 @@ while running:
     screen.fill(WHITE)
 
     title_surface = font_title.render("Music Player", True, BLUE)
-    track_surface = font_text.render(f"Current Track: {player.get_current_track_name()}", True, BLACK)
+    track_surface = font_text.render(
+        f"Current Track: {player.get_current_track_name()}", True, BLACK
+    )
 
     status_text = "Playing" if player.is_playing else "Stopped"
     status_surface = font_text.render(f"Status: {status_text}", True, BLACK)

@@ -30,16 +30,15 @@ class MusicPlayer:
         if self.playlist:
             pygame.mixer.music.load(self.playlist[self.current_index])
 
-def play(self):
-    if self.playlist:
-        try:
-            self.load_current_track()
-            pygame.mixer.music.play()
-            self.is_playing = True
-        except pygame.error as e:
-            print(f"Could not play track: {self.get_current_track_name()}")
-            print(f"Error: {e}")
-            self.is_playing = False
+    def play(self):
+        if self.playlist:
+            try:
+                self.load_current_track()
+                pygame.mixer.music.play()
+                self.is_playing = True
+            except pygame.error as e:
+                print(f"Error playing track: {e}")
+                self.is_playing = False
 
     def stop(self):
         pygame.mixer.music.stop()
