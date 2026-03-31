@@ -1,8 +1,7 @@
-a = input()
+a = int(input())
 def valid(a):
     ans = True
     for i in a:
-        i = int(i)
         if i % 2 != 0:
             ans = False
             break

@@ -1,7 +1,7 @@
 def usual(num):
-    for p in (2, 3, 5):
-        while num % p == 0:
-            num //= p
+    for i in (2, 3, 5):
+        while num % i == 0:
+            num //= i
     return num == 1
 
 n = int(input())

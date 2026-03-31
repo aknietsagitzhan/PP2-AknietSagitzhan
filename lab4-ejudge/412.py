@@ -9,7 +9,7 @@ d = []
 
 def to_json(v):
     return json.dumps(v, separators=(',', ':'))
-
+    
 def dfs(path, x, y):
     if isinstance(x, dict) and isinstance(y, dict):
         keys = sorted(set(x.keys()) | set(y.keys()))

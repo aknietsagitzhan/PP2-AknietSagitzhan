@@ -1,7 +1,7 @@
 import re
 s = input()
-d = re.findall(r"\d", s)
-if d:
-    print(" ".join(d))
+
+if re.search(r'^[A-Za-z].*\d$', s):
+    print("Yes")
 else:
-    print()
+    print("No")
