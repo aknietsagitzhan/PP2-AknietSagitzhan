@@ -16,7 +16,6 @@ clock = pygame.time.Clock()
 music_folder = os.path.join(os.path.dirname(__file__), "music")
 player = MusicPlayer(music_folder)
 
-# Colors
 BG_COLOR = (18, 18, 18)
 PANEL_COLOR = (35, 35, 35)
 TITLE_COLOR = (227, 84, 235)
@@ -25,7 +24,6 @@ ACCENT_COLOR = (245, 66, 78)
 BAR_BG = (70, 70, 70)
 BAR_FILL = (0, 200, 255)
 
-# Fonts
 title_font = pygame.font.Font(None, 60)
 text_font = pygame.font.Font(None, 34)
 small_font = pygame.font.Font(None, 28)
@@ -49,38 +47,38 @@ while running:
             elif event.key == pygame.K_q:
                 running = False
 
-    # Background
+    #background
     screen.fill(BG_COLOR)
 
-    # Main panel
+    #sqr
     panel_rect = pygame.Rect(110, 50, 700, 410)
     pygame.draw.rect(screen, PANEL_COLOR, panel_rect, border_radius=30)
 
-    # Title
+    #title
     title_surface = title_font.render("Akniet's Music Player", True, TITLE_COLOR)
     screen.blit(title_surface, (240, 90))
 
-    # Track name
+    #name
     track_name = player.get_current_track_name()
     track_surface = text_font.render(f"Track: {track_name}", True, TEXT_COLOR)
     screen.blit(track_surface, (150, 190))
 
-    # Status
+    #status
     status = "Playing" if player.is_playing else "Stopped"
     status_surface = text_font.render(f"Status: {status}", True, ACCENT_COLOR)
     screen.blit(status_surface, (150, 240))
 
-    # Position
+    #position
     position = player.get_position_seconds()
     position_surface = text_font.render(f"Position: {position} sec", True, TEXT_COLOR)
     screen.blit(position_surface, (150, 290))
 
-    #Progress bar based on seconds
+    #progress
     progress_width = min(position * 10, 600)
     pygame.draw.rect(screen, BAR_BG, (150, 340, 600, 10), border_radius=10)
     pygame.draw.rect(screen, BAR_FILL, (150, 340, progress_width, 10), border_radius=10)
 
-    # Controls
+    #buttons
     controls1 = small_font.render("P = Play   S = Stop   N = Next", True, TEXT_COLOR)
     controls2 = small_font.render("B = Previous   Q = Quit", True, TEXT_COLOR)
     screen.blit(controls1, (150, 380))
