@@ -2,28 +2,33 @@ import os
 import pygame
 from player import MusicPlayer
 
-
 pygame.init()
 pygame.mixer.init()
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 400
-
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-BLUE = (50, 100, 200)
+SCREEN_WIDTH = 900
+SCREEN_HEIGHT = 500
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Music Player")
-
-font_title = pygame.font.Font(None, 48)
-font_text = pygame.font.Font(None, 32)
-font_small = pygame.font.Font(None, 28)
 
 clock = pygame.time.Clock()
 
 music_folder = os.path.join(os.path.dirname(__file__), "music")
 player = MusicPlayer(music_folder)
+
+# Colors
+BG_COLOR = (18, 18, 18)
+PANEL_COLOR = (35, 35, 35)
+TITLE_COLOR = (227, 84, 235)
+TEXT_COLOR = (240, 240, 240)
+ACCENT_COLOR = (245, 66, 78)
+BAR_BG = (70, 70, 70)
+BAR_FILL = (0, 200, 255)
+
+# Fonts
+title_font = pygame.font.Font(None, 60)
+text_font = pygame.font.Font(None, 34)
+small_font = pygame.font.Font(None, 28)
 
 running = True
 
@@ -44,31 +49,42 @@ while running:
             elif event.key == pygame.K_q:
                 running = False
 
-    screen.fill(WHITE)
+    # Background
+    screen.fill(BG_COLOR)
 
-    title_surface = font_title.render("Music Player", True, BLUE)
-    track_surface = font_text.render(
-        f"Current Track: {player.get_current_track_name()}", True, BLACK
-    )
+    # Main panel
+    panel_rect = pygame.Rect(110, 50, 700, 410)
+    pygame.draw.rect(screen, PANEL_COLOR, panel_rect, border_radius=30)
 
-    status_text = "Playing" if player.is_playing else "Stopped"
-    status_surface = font_text.render(f"Status: {status_text}", True, BLACK)
+    # Title
+    title_surface = title_font.render("Akniet's Music Player", True, TITLE_COLOR)
+    screen.blit(title_surface, (240, 90))
 
-    position_surface = font_text.render(
-        f"Position: {player.get_position_seconds()} sec",
-        True,
-        BLACK
-    )
+    # Track name
+    track_name = player.get_current_track_name()
+    track_surface = text_font.render(f"Track: {track_name}", True, TEXT_COLOR)
+    screen.blit(track_surface, (150, 190))
 
-    controls_surface1 = font_small.render("P = Play   S = Stop   N = Next", True, BLACK)
-    controls_surface2 = font_small.render("B = Previous   Q = Quit", True, BLACK)
+    # Status
+    status = "Playing" if player.is_playing else "Stopped"
+    status_surface = text_font.render(f"Status: {status}", True, ACCENT_COLOR)
+    screen.blit(status_surface, (150, 240))
 
-    screen.blit(title_surface, (280, 40))
-    screen.blit(track_surface, (80, 130))
-    screen.blit(status_surface, (80, 180))
-    screen.blit(position_surface, (80, 230))
-    screen.blit(controls_surface1, (80, 300))
-    screen.blit(controls_surface2, (80, 335))
+    # Position
+    position = player.get_position_seconds()
+    position_surface = text_font.render(f"Position: {position} sec", True, TEXT_COLOR)
+    screen.blit(position_surface, (150, 290))
+
+    #Progress bar based on seconds
+    progress_width = min(position * 10, 600)
+    pygame.draw.rect(screen, BAR_BG, (150, 340, 600, 10), border_radius=10)
+    pygame.draw.rect(screen, BAR_FILL, (150, 340, progress_width, 10), border_radius=10)
+
+    # Controls
+    controls1 = small_font.render("P = Play   S = Stop   N = Next", True, TEXT_COLOR)
+    controls2 = small_font.render("B = Previous   Q = Quit", True, TEXT_COLOR)
+    screen.blit(controls1, (150, 380))
+    screen.blit(controls2, (150, 410))
 
     pygame.display.flip()
     clock.tick(30)
