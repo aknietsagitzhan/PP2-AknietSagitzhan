@@ -10,11 +10,11 @@ class MusicPlayer:
         self.is_playing = False
 
     def load_playlist(self):
-        supported_formats = (".mp3", ".wav")
+        formats = (".mp3", ".wav")
         files = []
 
         for file_name in os.listdir(self.music_folder):
-            if file_name.lower().endswith(supported_formats):
+            if file_name.lower().endswith(formats):
                 full_path = os.path.join(self.music_folder, file_name)
                 files.append(full_path)
 

@@ -5,10 +5,7 @@ from player import MusicPlayer
 pygame.init()
 pygame.mixer.init()
 
-SCREEN_WIDTH = 900
-SCREEN_HEIGHT = 500
-
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((900, 500))
 pygame.display.set_caption("Music Player")
 
 clock = pygame.time.Clock()
@@ -16,13 +13,13 @@ clock = pygame.time.Clock()
 music_folder = os.path.join(os.path.dirname(__file__), "music")
 player = MusicPlayer(music_folder)
 
-BG_COLOR = (18, 18, 18)
-PANEL_COLOR = (35, 35, 35)
-TITLE_COLOR = (227, 84, 235)
-TEXT_COLOR = (240, 240, 240)
-ACCENT_COLOR = (245, 66, 78)
-BAR_BG = (70, 70, 70)
-BAR_FILL = (0, 200, 255)
+bg_c = (18, 18, 18)
+panel_c = (35, 35, 35)
+title_c = (227, 84, 235)
+text_c = (240, 240, 240)
+accent_c = (245, 66, 78)
+bar_bg_c = (70, 70, 70)
+bar_fill_c = (0, 200, 255)
 
 title_font = pygame.font.Font(None, 60)
 text_font = pygame.font.Font(None, 34)
@@ -47,40 +44,32 @@ while running:
             elif event.key == pygame.K_q:
                 running = False
 
-    #background
-    screen.fill(BG_COLOR)
+    screen.fill(bg_c)
 
-    #sqr
     panel_rect = pygame.Rect(110, 50, 700, 410)
-    pygame.draw.rect(screen, PANEL_COLOR, panel_rect, border_radius=30)
+    pygame.draw.rect(screen, panel_c, panel_rect, border_radius=30)
 
-    #title
-    title_surface = title_font.render("Akniet's Music Player", True, TITLE_COLOR)
+    title_surface = title_font.render("Akniet's Music Player", True, title_c)
     screen.blit(title_surface, (240, 90))
 
-    #name
     track_name = player.get_current_track_name()
-    track_surface = text_font.render(f"Track: {track_name}", True, TEXT_COLOR)
+    track_surface = text_font.render(f"Track: {track_name}", True, text_c)
     screen.blit(track_surface, (150, 190))
 
-    #status
     status = "Playing" if player.is_playing else "Stopped"
-    status_surface = text_font.render(f"Status: {status}", True, ACCENT_COLOR)
+    status_surface = text_font.render(f"Status: {status}", True, accent_c)
     screen.blit(status_surface, (150, 240))
 
-    #position
     position = player.get_position_seconds()
-    position_surface = text_font.render(f"Position: {position} sec", True, TEXT_COLOR)
+    position_surface = text_font.render(f"Position: {position} sec", True, text_c)
     screen.blit(position_surface, (150, 290))
 
-    #progress
     progress_width = min(position * 10, 600)
-    pygame.draw.rect(screen, BAR_BG, (150, 340, 600, 10), border_radius=10)
-    pygame.draw.rect(screen, BAR_FILL, (150, 340, progress_width, 10), border_radius=10)
+    pygame.draw.rect(screen, bar_bg_c, (150, 340, 600, 10), border_radius=10)
+    pygame.draw.rect(screen, bar_fill_c, (150, 340, progress_width, 10), border_radius=10)
 
-    #buttons
-    controls1 = small_font.render("P = Play   S = Stop   N = Next", True, TEXT_COLOR)
-    controls2 = small_font.render("B = Previous   Q = Quit", True, TEXT_COLOR)
+    controls1 = small_font.render("P = Play   S = Stop   N = Next", True, text_c)
+    controls2 = small_font.render("B = Previous   Q = Quit", True, text_c)
     screen.blit(controls1, (150, 380))
     screen.blit(controls2, (150, 410))
 

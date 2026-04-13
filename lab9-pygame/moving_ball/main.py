@@ -3,24 +3,21 @@ from ball import Ball
 
 pygame.init()
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("Moving Ball Game")
 
 clock = pygame.time.Clock()
 
 ball = Ball(
-    x=SCREEN_WIDTH // 2,
-    y=SCREEN_HEIGHT // 2,
+    x=800 // 2,
+    y=600 // 2,
     radius=25,
     color=RED,
-    screen_width=SCREEN_WIDTH,
-    screen_height=SCREEN_HEIGHT
+    screen_width=800,
+    screen_height=600
 )
 
 running = True

@@ -14,13 +14,11 @@ fps_clock = pygame.time.Clock()
 
 center = (WIDTH // 2, HEIGHT // 2)
 base_path = os.path.dirname(__file__)
+clock_img = os.path.join(base_path, "images", "mickeyclock.png")
 
-clock_img = os.path.join(base_path, "images", "mickey_h.png")
-
-mickey_clock = MickeyClock(center, clock_img)
+mickey_clock = MickeyClock(center, clock_img, (WIDTH, HEIGHT))
 
 running = True
-
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

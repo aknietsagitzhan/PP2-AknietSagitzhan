@@ -1,6 +1,5 @@
 import pygame
 
-
 class Ball:
     def __init__(self, x, y, radius, color, screen_width, screen_height):
         self.x = x
