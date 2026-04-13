@@ -7,14 +7,12 @@ class MickeyClock:
         self.center = center
         self.screen_width, self.screen_height = screen_size
 
-        # Fill the whole window
         self.clock_img = pygame.image.load(clock_image_path).convert_alpha()
         self.clock_img = pygame.transform.smoothscale(
             self.clock_img,
             (self.screen_width, self.screen_height)
         )
 
-        # Scale hand sizes based on window size
         base_size = min(self.screen_width, self.screen_height)
         self.minute_hand = self.create_hand_surface(
             length=int(base_size * 0.23),
@@ -41,7 +39,7 @@ class MickeyClock:
         glove_color = (255, 255, 255)
         outline = (0, 0, 0)
 
-        # arm
+        #arm
         pygame.draw.line(
             surface,
             arm_color,
@@ -50,13 +48,13 @@ class MickeyClock:
             thickness
         )
 
-        # glove palm
+        #palm
         palm_radius = max(12, int(length * 0.13))
         palm_center = (pivot_x, 42)
         pygame.draw.circle(surface, glove_color, palm_center, palm_radius)
         pygame.draw.circle(surface, outline, palm_center, palm_radius, 2)
 
-        # thumb
+        #thumb
         thumb_offset = max(12, int(length * 0.13))
         thumb_radius = max(7, int(length * 0.07))
         if hand_side == "left":
@@ -67,7 +65,7 @@ class MickeyClock:
         pygame.draw.circle(surface, glove_color, thumb_center, thumb_radius)
         pygame.draw.circle(surface, outline, thumb_center, thumb_radius, 2)
 
-        # fingers
+        #fingers
         finger_offsets = [-18, -6, 6, 18]
         finger_w = max(10, int(length * 0.08))
         finger_h = max(20, int(length * 0.16))
@@ -113,15 +111,14 @@ class MickeyClock:
         screen.blit(rotated_image, rotated_rect)
 
     def draw(self, screen):
-        # background clock fills the whole window
         screen.blit(self.clock_img, (0, 0))
 
         minute_angle, second_angle = self.get_angles()
 
-        # right hand = minutes
+        #right hand = minutes
         self.blit_rotated_hand(screen, self.minute_hand, minute_angle)
 
-        # left hand = seconds
+        #left hand = seconds
         self.blit_rotated_hand(screen, self.second_hand, second_angle)
 
         pygame.draw.circle(screen, (0, 0, 0), self.center, self.center_dot_radius)

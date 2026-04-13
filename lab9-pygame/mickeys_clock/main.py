@@ -4,19 +4,16 @@ from clock import MickeyClock
 
 pygame.init()
 
-WIDTH = 700
-HEIGHT = 700
-
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((700, 700))
 pygame.display.set_caption("Mickey Clock")
 
 fps_clock = pygame.time.Clock()
 
-center = (WIDTH // 2, HEIGHT // 2)
+center = (700 // 2, 700 // 2)
 base_path = os.path.dirname(__file__)
 clock_img = os.path.join(base_path, "images", "mickeyclock.png")
 
-mickey_clock = MickeyClock(center, clock_img, (WIDTH, HEIGHT))
+mickey_clock = MickeyClock(center, clock_img, (700, 700))
 
 running = True
 while running:
