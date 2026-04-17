@@ -1,124 +1,121 @@
-from datetime import datetime
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
 import pygame
 
 
 class MickeyClock:
-    def __init__(self, center, clock_image_path, screen_size):
-        self.center = center
-        self.screen_width, self.screen_height = screen_size
+    def __init__(self) -> None:
+        pygame.init()
 
-        self.clock_img = pygame.image.load(clock_image_path).convert_alpha()
-        self.clock_img = pygame.transform.smoothscale(
-            self.clock_img,
-            (self.screen_width, self.screen_height)
-        )
+        self.base_dir = Path(__file__).resolve().parent
+        self.images_dir = self.base_dir / "images"
 
-        base_size = min(self.screen_width, self.screen_height)
-        self.minute_hand = self.create_hand_surface(
-            length=int(base_size * 0.23),
-            hand_side="right",
-            thickness=max(6, int(base_size * 0.014))
-        )
-        self.second_hand = self.create_hand_surface(
-            length=int(base_size * 0.30),
-            hand_side="left",
-            thickness=max(6, int(base_size * 0.014))
-        )
+        self.width = 800
+        self.height = 800
+        self.screen = pygame.display.set_mode((self.width, self.height))
+        pygame.display.set_caption("Mickey's Clock")
 
-        self.center_dot_radius = max(4, int(base_size * 0.008))
+        self.fps_clock = pygame.time.Clock()
 
-    def create_hand_surface(self, length, hand_side, thickness):
-        width = max(90, int(length * 0.75))
-        height = length + 40
+        self.clock_face = self.load_image("clock_face.png")
+        self.right_hand = self.load_image("right_hand.png")   
+        self.left_hand = self.load_image("left_hand.png")     
 
-        surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        pivot_x = width // 2
-        pivot_y = height - 20
+        face_size = 800
+        self.clock_face = pygame.transform.smoothscale(self.clock_face, (face_size, face_size))
 
-        arm_color = (30, 30, 30)
-        glove_color = (255, 255, 255)
-        outline = (0, 0, 0)
+        self.right_hand = pygame.transform.smoothscale(self.right_hand, (600, 900))
+        self.left_hand = pygame.transform.smoothscale(self.left_hand, (600, 900))
 
-        #arm
-        pygame.draw.line(
-            surface,
-            arm_color,
-            (pivot_x, pivot_y),
-            (pivot_x, 55),
-            thickness
-        )
+        self.center = (self.width // 2, self.height // 2)
 
-        #palm
-        palm_radius = max(12, int(length * 0.13))
-        palm_center = (pivot_x, 42)
-        pygame.draw.circle(surface, glove_color, palm_center, palm_radius)
-        pygame.draw.circle(surface, outline, palm_center, palm_radius, 2)
+        self.right_pivot = (self.right_hand.get_width() // 2, 450)
+        self.left_pivot = (self.left_hand.get_width() // 2, 450)
 
-        #thumb
-        thumb_offset = max(12, int(length * 0.13))
-        thumb_radius = max(7, int(length * 0.07))
-        if hand_side == "left":
-            thumb_center = (pivot_x - thumb_offset, 46)
-        else:
-            thumb_center = (pivot_x + thumb_offset, 46)
+        self.last_second = -1
 
-        pygame.draw.circle(surface, glove_color, thumb_center, thumb_radius)
-        pygame.draw.circle(surface, outline, thumb_center, thumb_radius, 2)
+    def load_image(self, filename: str) -> pygame.Surface:
+        path = self.images_dir / filename
+        if not path.exists():
+            raise FileNotFoundError(f"Missing image: {path}")
+        return pygame.image.load(str(path)).convert_alpha()
 
-        #fingers
-        finger_offsets = [-18, -6, 6, 18]
-        finger_w = max(10, int(length * 0.08))
-        finger_h = max(20, int(length * 0.16))
+    def get_angles(self) -> tuple[float, float]:
+        now = time.localtime()
+        minute = now.tm_min
+        second = now.tm_sec
 
-        for dx in finger_offsets:
-            finger_center = (pivot_x + dx, 20)
-            rect = (
-                finger_center[0] - finger_w // 2,
-                finger_center[1] - finger_h // 2,
-                finger_w,
-                finger_h
-            )
-            pygame.draw.ellipse(surface, glove_color, rect)
-            pygame.draw.ellipse(surface, outline, rect, 2)
-
-        return surface
-
-    def get_angles(self):
-        now = datetime.now()
-        minute = now.minute
-        second = now.second
-
-        minute_angle = (minute + second / 60) * 6
+        minute_angle = minute * 6 + second * 0.1
         second_angle = second * 6
 
         return minute_angle, second_angle
 
-    def blit_rotated_hand(self, screen, image, angle_degrees):
-        image_rect = image.get_rect()
-        pivot = pygame.math.Vector2(image_rect.width / 2, image_rect.height - 20)
-        original_center = pygame.math.Vector2(image_rect.center)
-        offset = original_center - pivot
-
-        rotated_image = pygame.transform.rotate(image, -angle_degrees)
-        rotated_offset = offset.rotate(angle_degrees)
-
-        draw_center = (
-            self.center[0] + rotated_offset.x,
-            self.center[1] + rotated_offset.y
+    def draw_rotated(
+        self,
+        surface: pygame.Surface,
+        image: pygame.Surface,
+        pivot_world: tuple[int, int],
+        pivot_image: tuple[int, int],
+        angle_clockwise: float,
+    ) -> None:
+        image_rect = image.get_rect(
+            topleft=(pivot_world[0] - pivot_image[0], pivot_world[1] - pivot_image[1])
         )
 
-        rotated_rect = rotated_image.get_rect(center=draw_center)
-        screen.blit(rotated_image, rotated_rect)
+        offset = pygame.math.Vector2(pivot_world) - image_rect.center
+        rotated_offset = offset.rotate(angle_clockwise)
 
-    def draw(self, screen):
-        screen.blit(self.clock_img, (0, 0))
+        rotated_center = (
+            pivot_world[0] - rotated_offset.x,
+            pivot_world[1] - rotated_offset.y,
+        )
+
+        rotated_image = pygame.transform.rotozoom(image, -angle_clockwise, 1.0)
+        rotated_rect = rotated_image.get_rect(center=rotated_center)
+        surface.blit(rotated_image, rotated_rect)
+
+    def draw(self) -> None:
+        self.screen.fill((235, 235, 235))
+
+        face_rect = self.clock_face.get_rect(center=self.center)
+        self.screen.blit(self.clock_face, face_rect)
 
         minute_angle, second_angle = self.get_angles()
 
-        #right hand = minutes
-        self.blit_rotated_hand(screen, self.minute_hand, minute_angle)
+        self.draw_rotated(
+            self.screen,
+            self.right_hand,
+            self.center,
+            self.right_pivot,
+            minute_angle + 180,
+        )
 
-        #left hand = seconds
-        self.blit_rotated_hand(screen, self.second_hand, second_angle)
+        self.draw_rotated(
+            self.screen,
+            self.left_hand,
+            self.center,
+            self.left_pivot,
+            second_angle + 180,
+        )
 
-        pygame.draw.circle(screen, (0, 0, 0), self.center, self.center_dot_radius)
+        pygame.display.flip()
+
+    def run(self) -> None:
+        self.draw()
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            current_second = time.localtime().tm_sec
+            if current_second != self.last_second:
+                self.last_second = current_second
+                self.draw()
+
+            self.fps_clock.tick(30)
