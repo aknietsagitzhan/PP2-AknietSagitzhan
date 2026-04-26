@@ -4,15 +4,6 @@ import random
 import time
 from pygame.locals import *
 
-# =========================================================
-# Racer Game - Extended Version
-# Extra features:
-# 1. Random coins with different weights/values
-# 2. Enemy speed increases after collecting N coins
-# 3. More creative UI design
-# 4. Code comments added
-# =========================================================
-
 pygame.init()
 pygame.mixer.init()
 
@@ -23,9 +14,6 @@ pygame.mixer.music.load("background.wav")
 pygame.mixer.music.play(-1)
 
 crash_sound = pygame.mixer.Sound("crash.wav")
-
-# Optional coin sound. If you do not have this file, remove these 2 lines.
-# coin_sound = pygame.mixer.Sound("coin.wav")
 
 # -----------------------------
 # Game settings

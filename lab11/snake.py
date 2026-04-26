@@ -2,14 +2,6 @@ import random
 import sys
 import pygame
 
-# =========================================================
-# Snake Game - Extended Version
-# Extra features:
-# 1. Randomly generated food with different weights/values
-# 2. Food disappears after some time using a timer
-# 3. Commented code
-# =========================================================
-
 pygame.init()
 
 # -----------------------------
