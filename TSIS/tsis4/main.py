@@ -3,7 +3,6 @@
 from db import create_tables
 from game import SnakeGame
 
-
 def main():
     create_tables()
     game = SnakeGame()
