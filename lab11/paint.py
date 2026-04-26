@@ -183,8 +183,7 @@ def draw_toolbar():
             (button.text == "Square" and current_tool == "square") or
             (button.text == "RightTri" and current_tool == "right_triangle") or
             (button.text == "EquiTri" and current_tool == "equi_triangle") or
-            (button.text == "Rhombus" and current_tool == "rhombus") or
-            (button.text == "Fill" and fill_shapes)
+            (button.text == "Rhombus" and current_tool == "rhombus") 
         )
         button.draw(screen, active=active)
 
