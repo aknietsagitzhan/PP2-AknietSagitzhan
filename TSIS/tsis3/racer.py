@@ -43,6 +43,27 @@ selected_vehicle_type = "standard"
 FUEL_CANISTER_DISTANCE = 900          # canister spawns after this distance, not time
 FUEL_CANISTER_SIZE = (28, 36)
 
+# Balance settings for events. Bigger distance = fewer objects.
+HAZARD_DISTANCE = 1400
+OBSTACLE_DISTANCE = 1700
+POWERUP_DISTANCE = 1800
+TRAFFIC_CHANGE_CHANCE = 0.0015
+
+# Traffic balance. Smaller count = fewer traffic cars.
+TRAFFIC_CAR_COUNT = 2
+TRAFFIC_SAFE_DISTANCE = 260
+
+# Limit how many objects can be on screen at once.
+MAX_HAZARDS = 1
+MAX_OBSTACLES = 1
+MAX_POWERUPS = 1
+
+# Events scroll slower than the road so they are easier to react to.
+EVENT_SCROLL_MULTIPLIER = 0.55
+FUEL_SCROLL_MULTIPLIER = 0.70
+
+POWERUP_DURATION = {"nitro": 3.0, "shield": 5.0, "repair": 0.0}
+
 # -----------------------------
 # PATHS
 # -----------------------------
@@ -70,20 +91,20 @@ levels = {
     "easy": {
         "road_speed": 80,
         "player_speed": 300,
-        "enemy_min": 90,
-        "enemy_max": 140
+        "enemy_min": 70,
+        "enemy_max": 105
     },
     "medium": {
         "road_speed": 110,
         "player_speed": 340,
-        "enemy_min": 130,
-        "enemy_max": 190
+        "enemy_min": 95,
+        "enemy_max": 145
     },
     "hard": {
         "road_speed": 140,
         "player_speed": 380,
-        "enemy_min": 180,
-        "enemy_max": 250
+        "enemy_min": 130,
+        "enemy_max": 190
     }
 }
 
@@ -245,6 +266,41 @@ def create_fuel_canister_image():
 
 fuel_canister_img = create_fuel_canister_image()
 
+def create_hazard_image(kind):
+    img = pygame.Surface((46, 34), pygame.SRCALPHA)
+    if kind == "oil":
+        pygame.draw.ellipse(img, (20, 20, 20), (3, 7, 40, 20))
+        pygame.draw.ellipse(img, (80, 80, 90), (12, 11, 18, 8))
+    else:
+        pygame.draw.ellipse(img, (55, 45, 40), (2, 3, 42, 27))
+        pygame.draw.ellipse(img, (20, 18, 17), (9, 8, 28, 16))
+    return img
+
+def create_obstacle_image(kind):
+    img = pygame.Surface((42, 42), pygame.SRCALPHA)
+    if kind == "cone":
+        pygame.draw.polygon(img, (255, 120, 20), [(21, 3), (7, 35), (35, 35)])
+        pygame.draw.rect(img, (245, 245, 245), (13, 22, 16, 5))
+    else:
+        pygame.draw.rect(img, (180, 40, 35), (4, 12, 34, 18), border_radius=4)
+        pygame.draw.rect(img, (245, 245, 245), (9, 15, 24, 5))
+    return img
+
+def create_powerup_image(kind):
+    colors = {"nitro": (60, 170, 255), "shield": (70, 220, 120), "repair": (255, 80, 90)}
+    img = pygame.Surface((32, 32), pygame.SRCALPHA)
+    pygame.draw.circle(img, colors[kind], (16, 16), 15)
+    pygame.draw.circle(img, (245, 245, 245), (16, 16), 15, 2)
+    icon_font = pygame.font.SysFont("Arial", 18, bold=True)
+    symbol = {"nitro": "N", "shield": "S", "repair": "+"}[kind]
+    txt = icon_font.render(symbol, True, (20, 20, 20))
+    img.blit(txt, (16 - txt.get_width() // 2, 15 - txt.get_height() // 2))
+    return img
+
+hazard_images = {"oil": create_hazard_image("oil"), "pothole": create_hazard_image("pothole")}
+obstacle_images = {"cone": create_obstacle_image("cone"), "barrier": create_obstacle_image("barrier")}
+powerup_images = {kind: create_powerup_image(kind) for kind in ["nitro", "shield", "repair"]}
+
 # -----------------------------
 # COIN CHANCE
 # -----------------------------
@@ -260,7 +316,7 @@ def get_random_coin():
 # -----------------------------
 # SAFE SPAWN
 # -----------------------------
-def is_safe_position(x, y, enemies, min_dist=120):
+def is_safe_position(x, y, enemies, min_dist=TRAFFIC_SAFE_DISTANCE):
     for e in enemies:
         if abs(e["y"] - y) < min_dist and abs(e["x"] - x) < 10:
             return False
@@ -274,7 +330,7 @@ def create_enemy(level_name):
     return {
         "img": random.choice(npc_images),
         "x": random.choice(lanes) - 20,
-        "y": random.randint(-800, -100),
+        "y": random.randint(-1300, -250),
         "target_lane": None,
         "current_speed": 0,
         "max_speed": random.uniform(level["enemy_min"], level["enemy_max"]),
@@ -345,12 +401,85 @@ def draw_fuel_bar(surface, x, y, width, height, fuel, max_fuel):
         pygame.draw.rect(surface, (235, 185, 55), (x + 2, y + 2, inner_width, height - 4), border_radius=5)
 
 # -----------------------------
+# HAZARDS / OBSTACLES / POWER-UPS
+# -----------------------------
+def create_lane_object(kind_group):
+    lane_x = random.choice(lanes)
+    if kind_group == "hazard":
+        kind = random.choice(["oil", "pothole"]); size = (46, 34)
+    elif kind_group == "obstacle":
+        kind = random.choice(["cone", "barrier"]); size = (42, 42)
+    else:
+        kind = random.choice(["nitro", "shield", "repair"]); size = (32, 32)
+    return {"kind": kind, "x": lane_x - size[0] // 2, "y": random.randint(-520, -140), "size": size}
+
+def spawn_distance_objects(state):
+    if state["distance_since_hazard"] >= HAZARD_DISTANCE:
+        if len(state["hazards"]) < MAX_HAZARDS:
+            state["hazards"].append(create_lane_object("hazard"))
+        state["distance_since_hazard"] = 0.0
+
+    if state["distance_since_obstacle"] >= OBSTACLE_DISTANCE:
+        if len(state["obstacles"]) < MAX_OBSTACLES:
+            state["obstacles"].append(create_lane_object("obstacle"))
+        state["distance_since_obstacle"] = 0.0
+
+    if state["distance_since_powerup"] >= POWERUP_DISTANCE:
+        if len(state["powerups"]) < MAX_POWERUPS:
+            state["powerups"].append(create_lane_object("powerup"))
+        state["distance_since_powerup"] = 0.0
+
+def update_dynamic_traffic(state, dt):
+    for enemy in state["enemies"]:
+        if random.random() < TRAFFIC_CHANGE_CHANCE:
+            possible = [l - 20 for l in lanes if abs((l - 20) - enemy["x"]) > 5]
+            random.shuffle(possible)
+            for lane_x in possible:
+                if all(abs(e["x"] - lane_x) > 5 or abs(e["y"] - enemy["y"]) > 120 for e in state["enemies"] if e != enemy):
+                    enemy["target_lane"] = lane_x; break
+        enemy["max_speed"] = max(65, min(220, enemy["max_speed"] + random.uniform(-3, 3) * dt))
+
+def update_scrolling_objects(items, road_speed):
+    for item in items[:]:
+        item["y"] += road_speed
+        if item["y"] > HEIGHT + 60:
+            items.remove(item)
+
+def use_shield_or_game_over(state, reason="CRASH"):
+    if state["shield_time"] > 0:
+        state["shield_time"] = 0
+        return False
+    safe_sound_play(crash_sound)
+    pygame.mixer.music.stop()
+    state["game_over"] = True
+    state["game_over_reason"] = reason
+    update_best_score()
+    return True
+
+def collect_powerup(state, kind):
+    if kind == "nitro":
+        state["nitro_time"] = POWERUP_DURATION["nitro"]
+    elif kind == "shield":
+        state["shield_time"] = POWERUP_DURATION["shield"]
+    elif kind == "repair":
+        add_fuel(state)
+
+def draw_powerup_status(surface, state):
+    y = 205
+    if state["nitro_time"] > 0:
+        txt = small_font.render(f"Nitro: {state['nitro_time']:.1f}s", True, (120, 210, 255))
+        surface.blit(txt, (10, y)); y += 24
+    if state["shield_time"] > 0:
+        txt = small_font.render(f"Shield: {state['shield_time']:.1f}s", True, (120, 255, 150))
+        surface.blit(txt, (10, y))
+
+# -----------------------------
 # RESET GAME
 # -----------------------------
 def reset_game(level_name):
     enemies = []
 
-    for _ in range(4):
+    for _ in range(TRAFFIC_CAR_COUNT):
         while True:
             e = create_enemy(level_name)
             if is_safe_position(e["x"], e["y"], enemies):
@@ -374,8 +503,16 @@ def reset_game(level_name):
         "max_fuel": car["max_fuel"],
         "vehicle_type": selected_vehicle_type,
         "fuel_canister": None,
+        "hazards": [],
+        "obstacles": [],
+        "powerups": [],
+        "nitro_time": 0.0,
+        "shield_time": 0.0,
         "distance": 0.0,
         "distance_since_fuel": 0.0,
+        "distance_since_hazard": 0.0,
+        "distance_since_obstacle": 0.0,
+        "distance_since_powerup": 0.0,
 
         "road_y1": 0.0,
         "road_y2": -HEIGHT,
@@ -513,6 +650,13 @@ while running:
         speed_multiplier = max(0.35, state["speed"] / MAX_SPEED_KMH)
         gas_pressed = keys[pygame.K_w] or keys[pygame.K_UP]
 
+        if state["nitro_time"] > 0:
+            state["nitro_time"] = max(0, state["nitro_time"] - dt)
+            state["speed"] = min(MAX_SPEED_KMH, state["speed"] + 65 * dt)
+            speed_multiplier = min(1.25, speed_multiplier + 0.35)
+        if state["shield_time"] > 0:
+            state["shield_time"] = max(0, state["shield_time"] - dt)
+
         # FUEL: usage depends on time, speed and gas.
         update_fuel(state, dt, gas_pressed, state["speed"] / MAX_SPEED_KMH)
 
@@ -520,8 +664,12 @@ while running:
         distance_step = road_base_speed * dt
         state["distance"] += distance_step
         state["distance_since_fuel"] += distance_step
+        state["distance_since_hazard"] += distance_step
+        state["distance_since_obstacle"] += distance_step
+        state["distance_since_powerup"] += distance_step
         if state["fuel_canister"] is None and state["distance_since_fuel"] >= FUEL_CANISTER_DISTANCE:
             respawn_fuel_canister(state)
+        spawn_distance_objects(state)
 
         # Car turns a little faster as the game speed grows.
         player_speed *= 0.85 + speed_multiplier
@@ -534,10 +682,7 @@ while running:
 
         # ROAD LIMIT
         if state["player_x"] < ROAD_LEFT or state["player_x"] > ROAD_RIGHT - 40:
-            safe_sound_play(crash_sound)
-            pygame.mixer.music.stop()
-            state["game_over"] = True
-            update_best_score()
+            use_shield_or_game_over(state, "OFF ROAD")
 
         # ROAD SCROLL
         road_speed = road_base_speed * dt
@@ -548,6 +693,9 @@ while running:
             state["road_y1"] = -HEIGHT
         if state["road_y2"] >= HEIGHT:
             state["road_y2"] = -HEIGHT
+
+        # DYNAMIC TRAFFIC
+        update_dynamic_traffic(state, dt)
 
         # ENEMIES
         for enemy in state["enemies"]:
@@ -590,7 +738,7 @@ while running:
             if enemy["y"] > HEIGHT:
                 while True:
                     new_enemy = create_enemy(state["level"])
-                    if is_safe_position(new_enemy["x"], new_enemy["y"], state["enemies"]):
+                    if is_safe_position(new_enemy["x"], new_enemy["y"], state["enemies"], TRAFFIC_SAFE_DISTANCE):
                         enemy.update(new_enemy)
                         state["score"] += 1
                         update_best_score()
@@ -604,9 +752,14 @@ while running:
 
         # FUEL CANISTER
         if state["fuel_canister"] is not None:
-            state["fuel_canister"]["y"] += road_speed
+            state["fuel_canister"]["y"] += road_speed * FUEL_SCROLL_MULTIPLIER
             if state["fuel_canister"]["y"] > HEIGHT:
                 state["fuel_canister"] = None
+
+        event_scroll_speed = road_speed * EVENT_SCROLL_MULTIPLIER
+        update_scrolling_objects(state["hazards"], event_scroll_speed)
+        update_scrolling_objects(state["obstacles"], event_scroll_speed)
+        update_scrolling_objects(state["powerups"], event_scroll_speed)
 
         # COLLISIONS
         player_rect = pygame.Rect(state["player_x"], state["player_y"], 40, 70)
@@ -614,10 +767,7 @@ while running:
         for enemy in state["enemies"]:
             enemy_rect = pygame.Rect(enemy["x"], enemy["y"], 40, 70)
             if player_rect.colliderect(enemy_rect):
-                safe_sound_play(crash_sound)
-                pygame.mixer.music.stop()
-                state["game_over"] = True
-                update_best_score()
+                use_shield_or_game_over(state, "CRASH")
 
         coin_rect = pygame.Rect(state["coin_x"], state["coin_y"], 25, 25)
         if player_rect.colliderect(coin_rect):
@@ -636,6 +786,29 @@ while running:
                 safe_sound_play(coin_sound)
                 add_fuel(state)
                 state["fuel_canister"] = None
+
+        for hazard in state["hazards"][:]:
+            rect = pygame.Rect(hazard["x"], hazard["y"], hazard["size"][0], hazard["size"][1])
+            if player_rect.colliderect(rect):
+                state["hazards"].remove(hazard)
+                if hazard["kind"] == "oil":
+                    state["player_x"] += random.choice([-1, 1]) * 35
+                    state["speed"] *= 0.9
+                else:
+                    state["speed"] *= 0.65
+
+        for obstacle in state["obstacles"][:]:
+            rect = pygame.Rect(obstacle["x"], obstacle["y"], obstacle["size"][0], obstacle["size"][1])
+            if player_rect.colliderect(rect):
+                state["obstacles"].remove(obstacle)
+                use_shield_or_game_over(state, "ROAD OBSTACLE")
+
+        for powerup in state["powerups"][:]:
+            rect = pygame.Rect(powerup["x"], powerup["y"], powerup["size"][0], powerup["size"][1])
+            if player_rect.colliderect(rect):
+                safe_sound_play(coin_sound)
+                collect_powerup(state, powerup["kind"])
+                state["powerups"].remove(powerup)
 
     # DRAW
     screen.fill((20, 20, 20))
@@ -707,6 +880,16 @@ while running:
         if state["fuel_canister"] is not None:
             screen.blit(fuel_canister_img, (state["fuel_canister"]["x"], state["fuel_canister"]["y"]))
 
+        for hazard in state["hazards"]:
+            screen.blit(hazard_images[hazard["kind"]], (hazard["x"], hazard["y"]))
+        for obstacle in state["obstacles"]:
+            screen.blit(obstacle_images[obstacle["kind"]], (obstacle["x"], obstacle["y"]))
+        for powerup in state["powerups"]:
+            screen.blit(powerup_images[powerup["kind"]], (powerup["x"], powerup["y"]))
+
+        if state["shield_time"] > 0:
+            pygame.draw.circle(screen, (90, 230, 130), (int(state["player_x"] + 20), int(state["player_y"] + 35)), 45, 3)
+
         # UI
         score_text = font.render(f"Score: {state['score']}", True, (255, 255, 255))
         coins_text = font.render(f"Coins: {state['coins']}", True, (255, 255, 255))
@@ -723,6 +906,7 @@ while running:
         screen.blit(speed_text, (10, 115))
         screen.blit(fuel_text, (10, 150))
         draw_fuel_bar(screen, 10, 180, 145, 18, state["fuel"], state["max_fuel"])
+        draw_powerup_status(screen, state)
         screen.blit(best_text, (WIDTH - best_text.get_width() - 10, 45))
 
         if state["game_over"]:
