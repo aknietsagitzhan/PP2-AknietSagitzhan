@@ -528,7 +528,6 @@ def reset_game(level_name):
     }
 
 state = None
-
 font = pygame.font.SysFont("Arial", 24)
 game_over_font = pygame.font.SysFont("Arial", 40)
 title_font = pygame.font.SysFont("Arial", 50)
